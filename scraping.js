@@ -52,7 +52,7 @@ function search(value) {
       "&tagged=" +
       document.getElementById("tag").value;
     const label = document.createElement("h2");
-    label.innerText = "10 Newest Questions:";
+    label.innerText = "10 Latest Questions:";
     document.getElementById("main").appendChild(label);
     sendHttpRequest("GET", url1)
       .then((responses) => {
