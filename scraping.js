@@ -1,4 +1,5 @@
 var sendDate, receiveDate, responseTime;
+const baseURL = "https://api.stackexchange.com";
 
 const sendHttpRequest = (method, url, data) => {
   const promise = new Promise((resolve, reject) => {
@@ -37,17 +38,21 @@ const getData = (value, sorted) => {
 function search(value) {
   sendDate = new Date().getTime();
   document.getElementById("main").innerHTML = "";
+  document.getElementById("footer").innerHTML = "";
+
   if (document.getElementById("tag").value == "") alert("please provide input");
   else {
     fromDate = Date.now() - 604800000;
     fromDate = fromDate.toString().slice(0, -3);
     const url1 =
-      "https://api.stackexchange.com/2.2/search?order=desc&sort=creation&site=stackoverflow&filter=!Olkxn-2EYqpU6Xssw7cIUVdBrj.z)kAYy40Tsgw-Qee&fromdate=" +
+      baseURL +
+      "/2.2/search?page=1&pagesize=10&order=desc&sort=creation&site=stackoverflow&filter=!Olkxn-2EYqpU6Xssw7cIUVdBrj.z)kAYy40Tsgw-Qee&fromdate=" +
       fromDate +
       "&tagged=" +
       document.getElementById("tag").value;
     const url2 =
-      "https://api.stackexchange.com/2.2/search?order=desc&sort=votes&site=stackoverflow&filter=!Olkxn-2EYqpU6Xssw7cIUVdBrj.z)kAYy40Tsgw-Qee&fromdate=" +
+      baseURL +
+      "/2.2/search?page=1&pagesize=10&order=desc&sort=votes&site=stackoverflow&filter=!Olkxn-2EYqpU6Xssw7cIUVdBrj.z)kAYy40Tsgw-Qee&fromdate=" +
       fromDate +
       "&tagged=" +
       document.getElementById("tag").value;
@@ -56,8 +61,14 @@ function search(value) {
     document.getElementById("main").appendChild(label);
     sendHttpRequest("GET", url1)
       .then((responses) => {
-        for (i = 0; i < 10; i++) {
-          createThread(responses.items[i]);
+        if (responses.has_more)
+          for (i = 0; i < 10; i++) {
+            createThread(responses.items[i]);
+          }
+        else {
+          const noMore1 = document.createElement("p");
+          noMore1.textContent = "None";
+          document.getElementById("main").appendChild(noMore1);
         }
       })
       .then(() => {
@@ -66,18 +77,27 @@ function search(value) {
         document.getElementById("main").appendChild(label);
         sendHttpRequest("GET", url2)
           .then((responseData) => {
-            for (y = 0; y < 10; y++) {
-              createThread(responseData.items[y]);
+            if (responseData.has_more)
+              for (y = 0; y < 10; y++) {
+                createThread(responseData.items[y]);
+              }
+            else {
+              const noMore2 = document.createElement("p");
+              noMore2.textContent = "None";
+              document.getElementById("main").appendChild(noMore2);
             }
           })
           .then(() => {
             receiveDate = new Date().getTime();
             responseTimeMs = (receiveDate - sendDate) / 1000;
-            document.body.appendChild(document.createElement("hr"));
+            document
+              .getElementById("footer")
+              .appendChild(document.createElement("hr"));
             const respTime = document.createElement("h3");
+            respTime.id = "response-time";
             respTime.innerText =
               "Total Response Time: " + responseTimeMs.toString() + " seconds.";
-            document.body.appendChild(respTime);
+            document.getElementById("footer").appendChild(respTime);
 
             var s = document.createElement("script");
             s.type = "text/javascript";
@@ -95,7 +115,7 @@ function createThread(thread) {
   title =
     thread.title +
     " - Date: " +
-    sanitizeDate(thread.creation_date) +
+    formatDate(thread.creation_date) +
     " - Votes: " +
     thread.score;
   const newContent = document.createTextNode(title);
@@ -139,7 +159,7 @@ function getAnswers(answers, answer_count) {
       "Vote(s): " +
       answers[k].score +
       " - Answered on: " +
-      sanitizeDate(answers[k].creation_date);
+      formatDate(answers[k].creation_date);
     a.appendChild(header);
     const ansBody = document.createElement("div");
     ansBody.innerHTML = answers[k].body;
@@ -179,7 +199,7 @@ function getComments(comments, comment_count, QorA) {
       "Vote(s): " +
       comments[j].score +
       " - Commented on: " +
-      sanitizeDate(comments[j].creation_date);
+      formatDate(comments[j].creation_date);
     cmt.appendChild(header);
     const ansBody = document.createElement("div");
     ansBody.innerHTML = comments[j].body;
@@ -194,7 +214,7 @@ function getComments(comments, comment_count, QorA) {
   return commentsDiv;
 }
 
-function sanitizeDate(date) {
+function formatDate(date) {
   const milliseconds = date * 1000;
 
   const dateObject = new Date(milliseconds);
